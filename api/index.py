@@ -8,7 +8,8 @@ app = FastAPI(title="CyberBot WhatsApp (Groq)")
 # ============ إعدادات Groq ============
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile"
+# تم تغيير النموذج إلى نموذج مستقر وسريع جداً
+MODEL_NAME = "llama-3.1-8b-instant"
 
 # ============ إعدادات واتساب ============
 VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN", "")
@@ -41,11 +42,13 @@ def generate_reply(user_text: str) -> str:
     }
     try:
         r = requests.post(GROQ_URL, headers=headers, json=payload, timeout=30)
-        r.raise_for_status()
+        # إذا كان هناك خطأ من Groq، سيظهر نصه هنا بدلاً من رسالة الخطأ العامة
+        if r.status_code != 200:
+            return f"خطأ من Groq (كود {r.status_code}): {r.text}"
+        
         return r.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"Groq error: {e}")
-        return "عذراً، حدث خطأ في معالجة طلبك."
+        return f"خطأ في الاتصال: {str(e)}"
 
 # واجهة اختبار بسيطة
 @app.get("/", response_class=HTMLResponse)
@@ -65,12 +68,11 @@ async def home():
 async def chat_test(text: str = Form(...)):
     return JSONResponse({"reply": generate_reply(text)})
 
-# 🛠️ تم إصلاح دالة التحقق هنا (Webhook Verification)
+# التحقق من Webhook
 @app.get("/webhook")
 async def verify(request: Request):
     p = request.query_params
     if p.get("hub.mode") == "subscribe" and p.get("hub.verify_token") == VERIFY_TOKEN:
-        # إرجاع النص العادي بدلاً من الرقم ليتوافق مع Meta
         return PlainTextResponse(content=p.get("hub.challenge"))
     raise HTTPException(status_code=403, detail="Verification token mismatch")
 
