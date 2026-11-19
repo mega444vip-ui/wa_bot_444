@@ -8,8 +8,8 @@ app = FastAPI(title="CyberBot WhatsApp (Groq)")
 # ============ إعدادات Groq ============
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-# تم تغيير النموذج إلى نموذج مستقر وسريع جداً
-MODEL_NAME = "llama-3.1-8b-instant"
+# تم تغيير النموذج إلى نموذج مستقر وسريع 
+MODEL_NAME = "openai/gpt-oss-120b" # أو أي نموذج آخر من القائمة
 
 # ============ إعدادات واتساب ============
 VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN", "")
