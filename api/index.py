@@ -1,17 +1,17 @@
 import os
 from fastapi import FastAPI, Request, HTTPException, Form
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 import requests
 
-app = FastAPI(title="CyberBot WhatsApp (Groq + Vercel)")
+app = FastAPI(title="CyberBot WhatsApp (Groq)")
 
 # ============ إعدادات Groq ============
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "llama-3.3-70b-versatile" 
+MODEL_NAME = "llama-3.3-70b-versatile"
 
 # ============ إعدادات واتساب ============
-VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN", "cyberbot_secret_2026")
+VERIFY_TOKEN = os.getenv("WA_VERIFY_TOKEN", "")
 WA_TOKEN     = os.getenv("WA_ACCESS_TOKEN", "")
 PHONE_ID     = os.getenv("WA_PHONE_ID", "")
 
@@ -65,13 +65,14 @@ async def home():
 async def chat_test(text: str = Form(...)):
     return JSONResponse({"reply": generate_reply(text)})
 
-# Webhook التحقق
+# 🛠️ تم إصلاح دالة التحقق هنا (Webhook Verification)
 @app.get("/webhook")
 async def verify(request: Request):
     p = request.query_params
     if p.get("hub.mode") == "subscribe" and p.get("hub.verify_token") == VERIFY_TOKEN:
-        return int(p.get("hub.challenge"))
-    raise HTTPException(status_code=403)
+        # إرجاع النص العادي بدلاً من الرقم ليتوافق مع Meta
+        return PlainTextResponse(content=p.get("hub.challenge"))
+    raise HTTPException(status_code=403, detail="Verification token mismatch")
 
 # استقبال الرسائل
 @app.post("/webhook")
